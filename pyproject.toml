@@ -1,0 +1,15 @@
+[project]
+name = "fii-portfolio-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.127.0",
+    "fastapi-users[sqlalchemy]>=15.0.3",
+    "httpx>=0.28.1",
+    "psycopg2-binary>=2.9.11",
+    "pytest>=9.0.2",
+    "sqlalchemy-utils>=0.42.1",
+    "uvicorn[standard]>=0.40.0",
+]

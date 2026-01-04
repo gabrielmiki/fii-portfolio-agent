@@ -12,4 +12,5 @@ dependencies = [
     "pytest>=9.0.2",
     "sqlalchemy-utils>=0.42.1",
     "uvicorn[standard]>=0.40.0",
+    "yfinance>=1.0",
 ]

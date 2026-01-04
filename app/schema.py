@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
+from app.db import TransactionType
 
 class AssetBase(BaseModel):
     """Base schema with common asset fields"""
@@ -47,7 +48,7 @@ class PortfolioResponse(BaseModel):
     assets: list[AssetResponse]
 
 # ========================================================================================
-# Additional schemas for User and Transaction can be defined similarly if needed.
+# User Schemas
 # ========================================================================================
 
 class UserBase(BaseModel):
@@ -67,3 +68,34 @@ class UserResponse(UserBase):
     id: UUID
     
     model_config = ConfigDict(from_attributes=True)
+
+# ========================================================================================
+# Transaction Schemas
+# ========================================================================================
+
+class TransactionBase(BaseModel):
+    """Base schema for transaction"""
+    transaction_type: TransactionType = Field(..., description="Type of transaction: 'buy' or 'sell'")
+    quantity: int = Field(..., gt=0, description="Number of shares/units transacted")
+    price_per_unit: float = Field(..., gt=0, description="Price per unit at the time of transaction")
+    transaction_date: Optional[datetime] = Field(None, description="Date and time of the transaction")
+
+class TransactionCreate(TransactionBase):
+    """Schema for creating a transaction"""
+    asset_id: UUID = Field(..., description="ID of the asset associated with this transaction")
+    
+class TransactionResponse(TransactionBase):
+    """Schema for transaction responses"""
+    id: UUID
+    asset_id: UUID
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class TransactionUpdate(BaseModel):
+    """Schema for updating a transaction"""
+    transaction_type: Optional[TransactionType] = None
+    quantity: Optional[int] = Field(None, gt=0)
+    price_per_unit: Optional[float] = Field(None, gt=0)
+    transaction_date: Optional[datetime] = None
+
+# ========================================================================================

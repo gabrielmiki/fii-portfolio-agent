@@ -6,10 +6,11 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import enum
+from uuid import uuid4
 
 DATABASE_URL = "postgresql://myuser:mypassword@localhost:5432/mydatabase"
 
-class TransactionType(enum.Enum):
+class TransactionType(str, enum.Enum):
     BUY = "buy"
     SELL = "sell"
 
@@ -19,7 +20,7 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     email = Column(String(100), unique=True, nullable=False)
     notion_database_id = Column(String(50), unique=True, nullable=False)
     notion_api_key = Column(String(100), nullable=False)
@@ -29,7 +30,7 @@ class User(Base):
 class Asset(Base):
     __tablename__ = "assets"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     symbol = Column(String(10), unique=True, nullable=False)
     name = Column(String(100), nullable=False)
     sector = Column(String(50), nullable=False)
@@ -37,6 +38,7 @@ class Asset(Base):
     current_price = Column(Numeric(10, 2), nullable=True)
     quantity = Column(Integer, nullable=False)
     wallet_percentage = Column(Numeric(5, 2), nullable=True)
+    profit_pct = Column(Numeric(5, 2), nullable=True)
     
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     user = relationship("User", back_populates="assets")
@@ -46,7 +48,7 @@ class Asset(Base):
 class Transaction(Base):
     __tablename__ = "transactions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     transaction_type = Column(Enum(TransactionType), nullable=False)  # e.g., 'buy' or 'sell'
     quantity = Column(Integer, nullable=False)
     price_per_unit = Column(Numeric(10, 2), nullable=False)

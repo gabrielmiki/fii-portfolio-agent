@@ -4,28 +4,29 @@ from sqlalchemy import text, inspect
 from app.db import engine, Base, User
 
 # test_database_config.py
-def test_engine_configuration(test_engine_fixture):
+@pytest.mark.database
+def test_engine_configuration(db_engine):
     """Test that the engine is configured correctly."""
     # Check database dialect
-    assert test_engine_fixture.url.drivername == "postgresql"
-    
+    assert db_engine.url.drivername == "postgresql"
+
     # Check that engine is working
     from sqlalchemy import text
-    with test_engine_fixture.connect() as conn:
+    with db_engine.connect() as conn:
         result = conn.execute(text("SELECT 1"))
         assert result.scalar() == 1
     
     # Pool might not exist if using NullPool, so check safely
-    if hasattr(test_engine_fixture.pool, '_pre_ping'):
-        assert test_engine_fixture.pool._pre_ping is True
+    if hasattr(db_engine.pool, '_pre_ping'):
+        assert db_engine.pool._pre_ping is True
 
-def test_database_connection(test_engine_fixture):
+def test_database_connection(db_engine):
     """
     Test that we can successfully connect to the database.
     This verifies the connection string and credentials are correct.
     """
     # Try to execute a simple query
-    with test_engine_fixture.connect() as connection:
+    with db_engine.connect() as connection:
         result = connection.execute(text("SELECT 1"))
         assert result.scalar() == 1
 
@@ -95,6 +96,7 @@ def test_assets_columns(test_db):
     quantity_column = next(col for col in columns if col["name"] == "quantity")
     wallet_percentage_column = next(col for col in columns if col["name"] == "wallet_percentage")
     user_id_column = next(col for col in columns if col["name"] == "user_id")
+    
     assert str(id_column["type"]) == "UUID"
     assert str(name_column["type"]) == "VARCHAR(100)"
     assert str(symbol_column["type"]) == "VARCHAR(10)"

@@ -25,7 +25,7 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
     summary="Create User",
     description="Create a new user"
 )
-async def create_user(
+def create_user(
     user: UserCreate,
     session: DatabaseSession
 ):
@@ -37,14 +37,6 @@ async def create_user(
     - **notion_database_id**: Notion database ID
     - **notion_api_key**: Notion API key
     """
-    # Check if user with this email already exists
-    existing_user = session.query(User).filter(User.email == user.email).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User with email '{user.email}' already exists"
-        )
-    
     # Create new user
     db_user = User(
         id=uuid4(),
@@ -52,19 +44,26 @@ async def create_user(
         notion_database_id=user.notion_database_id,
         notion_api_key=user.notion_api_key
     )
-    
+
     try:
         session.add(db_user)
         session.commit()
-        session.refresh(db_user)
-        return db_user
-        
+        session.refresh(db_user)  # Optional: refresh to get DB-generated values
+        return db_user  # ← ADD THIS!
     except IntegrityError as e:
         session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e.orig)}"
-        )
+        error_msg = str(e.orig).lower()
+        
+        if 'email' in error_msg or 'unique' in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"User with email '{user.email}' already exists"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create user"
+            )
 
 
 @router.get(
@@ -74,7 +73,7 @@ async def create_user(
     summary="Get All Users",
     description="Retrieve all users"
 )
-async def get_users(session: DatabaseSession):
+def get_users(session: DatabaseSession):
     """
     Retrieve all users.
     """
@@ -89,7 +88,7 @@ async def get_users(session: DatabaseSession):
     summary="Get User",
     description="Retrieve a specific user by ID"
 )
-async def get_user(
+def get_user(
     user_id: UUID,
     session: DatabaseSession
 ):
@@ -113,7 +112,7 @@ async def get_user(
     summary="Delete User",
     description="Delete a user"
 )
-async def delete_user(
+def delete_user(
     user_id: UUID,
     session: DatabaseSession
 ):

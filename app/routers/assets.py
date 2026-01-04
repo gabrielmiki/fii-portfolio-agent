@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import Annotated
 from uuid import uuid4, UUID
+from app.service import PortfolioService
 
 from app.db import get_db, Base, engine, Asset
 from app.schema import (
@@ -29,7 +30,7 @@ DatabaseSession = Annotated[Session, Depends(get_db)]
     summary="Get Portfolio",
     description="Retrieve all assets in the portfolio with their current values"
 )
-async def get_portfolio(session: DatabaseSession):
+def get_portfolio(session: DatabaseSession):
     """
     Retrieve the complete portfolio.
     
@@ -65,7 +66,7 @@ async def get_portfolio(session: DatabaseSession):
     summary="Create Asset",
     description="Add a new asset to the portfolio"
 )
-async def create_asset(
+def create_asset(
     asset: AssetCreate,
     session: DatabaseSession
 ):
@@ -83,14 +84,6 @@ async def create_asset(
     
     Returns the created asset with its generated ID.
     """
-    # Check if asset with this symbol already exists
-    existing_asset = session.query(Asset).filter(Asset.symbol == asset.symbol).first()
-    if existing_asset:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Asset with symbol '{asset.symbol}' already exists"
-        )
-    
     # Create new asset instance
     db_asset = Asset(
         id=uuid4(),  # Generate UUID
@@ -109,21 +102,31 @@ async def create_asset(
         session.add(db_asset)
         session.commit()
         session.refresh(db_asset)  # Refresh to get any database-generated values
+
+        portfolio_service = PortfolioService(session=session)
+        portfolio_service.update_portfolio_percentages(user_id=asset.user_id)
         
         return db_asset
-        
+
     except IntegrityError as e:
         session.rollback()
-        # Check if it's a foreign key violation (user doesn't exist)
-        if "foreign key" in str(e.orig).lower():
+        error_msg = str(e.orig).lower()
+        
+        if 'symbol' in error_msg or 'unique' in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Asset with symbol '{asset.symbol}' already exists"
+            )
+        elif 'foreign key' in error_msg:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"User with ID '{asset.user_id}' not found"
             )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database error: {str(e.orig)}"
-        )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to create asset"
+            )
 
 
 @router.delete(
@@ -132,7 +135,7 @@ async def create_asset(
     summary="Delete Asset",
     description="Remove an asset from the portfolio"
 )
-async def delete_asset(
+def delete_asset(
     asset_id: UUID,
     session: DatabaseSession
 ):
@@ -182,7 +185,7 @@ async def delete_asset(
     summary="Get Asset",
     description="Retrieve a specific asset by ID"
 )
-async def get_asset(
+def get_asset(
     asset_id: UUID,
     session: DatabaseSession
 ):
@@ -213,7 +216,7 @@ async def get_asset(
     summary="Update Asset",
     description="Update an existing asset's information"
 )
-async def update_asset(
+def update_asset(
     asset_id: UUID,
     asset_update: AssetUpdate,
     session: DatabaseSession

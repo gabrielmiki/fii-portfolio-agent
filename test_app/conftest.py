@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from fastapi.testclient import TestClient
+from unittest.mock import MagicMock
 
 from app.db import Base, get_db
 from app.app import app
@@ -148,6 +149,18 @@ def client(test_db):
         yield test_client
     
     app.dependency_overrides.clear()
+
+# Fixture to mock the Notion Client specifically for these tests
+@pytest.fixture
+def mock_notion(mocker):
+    # Patch the 'Client' class where it is imported in your service
+    mock_client_class = mocker.patch("app.service.Client")
+    
+    # Create a mock instance that the class will return
+    mock_instance = MagicMock()
+    mock_client_class.return_value = mock_instance
+    
+    return mock_instance
 
 # ========================================================================================
 # Factories for creating test data

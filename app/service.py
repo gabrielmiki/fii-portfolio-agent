@@ -9,6 +9,7 @@ from app.db import (
 )
 from uuid import uuid4
 import yfinance as yf
+from notion_client import Client
 
 class PortfolioService:
     def __init__(self, session: Session):
@@ -166,3 +167,88 @@ class MarketDataService:
         
         self.session.commit()
         return {"message": "Prices updated successfully"}
+
+# ===================================================================
+# Notion Client Service
+# ===================================================================
+
+class NotionSyncService:
+    def __init__(self, session: Session, user: User):
+        # Inicializa o cliente com o token seguro
+        self.client = Client(auth=user.notion_api_key)
+        self.database_id = user.notion_database_id
+        self.session = session
+
+    def sync_portfolio(self):
+        """
+        Lê todos os ativos do Banco SQL e espelha no Notion.
+        """
+        assets = self.session.query(Asset).all()
+        results = []
+
+        for asset in assets:
+            try:
+                # 1. Verifica se o ativo já existe no Notion
+                page_id = self._get_page_id_by_symbol(asset.symbol)
+
+                # 2. Monta o payload (os dados formatados para o Notion)
+                properties = self._build_properties(asset)
+
+                if page_id:
+                    # UPDATE: Se já existe, atualiza
+                    self.client.update_page(page_id=page_id, properties=properties)
+                    action = "Updated"
+                else:
+                    # CREATE: Se não existe, cria
+                    self.client.create_page(
+                        parent={"database_id": self.database_id},
+                        properties=properties
+                    )
+                    action = "Created"
+                
+                results.append(f"{asset.symbol}: {action}")
+            
+            except Exception as e:
+                print(f"Erro ao sincronizar {asset.symbol}: {e}")
+                results.append(f"{asset.symbol}: Failed")
+
+        return results
+
+    def _get_page_id_by_symbol(self, symbol: str) -> str | None:
+        """
+        Busca no Notion se existe uma linha com esse Symbol.
+        Retorna o ID da página ou None.
+        """
+        response = self.client.databases.query(
+            database_id=self.database_id,
+            filter={
+                "property": "Symbol",
+                "title": {
+                    "equals": symbol
+                }
+            }
+        )
+        results = response.get("results")
+        if results:
+            return results[0]["id"]
+        return None
+
+    def _build_properties(self, asset: Asset) -> dict:
+        """
+        Transforma o objeto Asset do Python no JSON que o Notion exige.
+        """
+        return {
+            "Symbol": {
+                "title": [{"text": {"content": asset.symbol}}]
+            },
+            "Quantity": {
+                "number": asset.quantity
+            },
+            "Current Price": {
+                "number": asset.current_price if asset.current_price else 0.0
+            },
+            "Profit %": {
+                # O Notion espera frações para porcentagem (10% = 0.1)
+                "number": (asset.profit_pct / 100) if asset.profit_pct else 0.0
+            }
+        }

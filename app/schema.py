@@ -12,6 +12,7 @@ class AssetBase(BaseModel):
     sector: str = Field(..., min_length=1, max_length=50, description="Market sector")
     average_buy_price: float = Field(..., gt=0, description="Average purchase price")
     quantity: int = Field(..., gt=0, description="Number of shares/units owned")
+    profit_pct: Optional[float] = Field(None, description="Profit percentage")
 
 
 class AssetCreate(AssetBase):

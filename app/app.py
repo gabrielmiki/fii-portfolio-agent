@@ -13,7 +13,7 @@ from app.schema import (
     UserCreate,
     UserResponse
 )
-from app.routers import assets, auth, transactions, refresh
+from app.routers import assets, auth, transactions, refresh, portfolio
 
 # Create all tables (in production, you'd use Alembic migrations instead)
 Base.metadata.create_all(bind=engine)
@@ -27,3 +27,4 @@ app.include_router(assets.router, prefix="/assets", tags=["Assets"])
 app.include_router(auth.router, prefix="/users", tags=["Users"])
 app.include_router(transactions.router, prefix="/transactions", tags=["Transactions"])
 app.include_router(refresh.router, tags=["Market Data"])
+app.include_router(portfolio.router, tags=["Notion Sync", "Portfolio"])

@@ -1,5 +1,6 @@
 from app.db import User, Asset, Transaction, TransactionType
 import pytest
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 # ====================================================================================
@@ -225,3 +226,23 @@ def test_refresh_market_data_endpoint(client):
     
     assert response.status_code == 202
     assert response.json() == {"message": "Market data refresh initiated in the background."}
+
+# ====================================================================================
+# Test Notion Sync Endpoint
+# ====================================================================================
+
+@pytest.mark.endpoints
+def test_sync_endpoint_triggers_background_task(client, mocker):
+    # Mock the Service method so we don't actually run logic or hit Notion
+    mock_sync = mocker.patch("app.service.NotionSyncService.sync_portfolio")
+    
+    # Call the endpoint
+    response = client.post("/sync/notion")
+    
+    # Verify response
+    assert response.status_code == 200
+    assert response.json() == {"message": "Sincronização com o Notion iniciada!"}
+    
+    # Verify that the background task was scheduled
+    # (Note: TestClient runs background tasks synchronously after the response)
+    mock_sync.assert_called_once()

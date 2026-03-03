@@ -47,6 +47,7 @@ def get_portfolio(session: DatabaseSession):
     has_prices = True
     
     for asset in assets:
+        print(f"Asset: {asset.symbol}, Current Price: {asset.current_price}, Quantity: {asset.quantity}")
         if asset.current_price is not None:
             total_value += float(asset.current_price) * asset.quantity
         else:

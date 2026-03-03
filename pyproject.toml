@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.127.0",
+    "fastapi[all]>=0.127.0",
     "fastapi-users[sqlalchemy]>=15.0.3",
     "httpx>=0.28.1",
     "notion-client>=2.7.0",

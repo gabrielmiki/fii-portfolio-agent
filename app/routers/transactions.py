@@ -37,6 +37,11 @@ def create_transaction(session: DatabaseSession, transaction: TransactionCreate)
     - **transaction_date**: Date and time of the transaction
     - **asset_id**: ID of the asset associated with this transaction
     """
+    # look up the asset first to get its owner
+    asset = session.query(Asset).filter(Asset.id == transaction.asset_id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail=f"Asset '{transaction.asset_id}' not found")
+
     db_transaction = Transaction(
         id=uuid4(),
         transaction_type=transaction.transaction_type,
@@ -48,22 +53,14 @@ def create_transaction(session: DatabaseSession, transaction: TransactionCreate)
 
     try:
         portfolio_service = PortfolioService(session=session)
-        portfolio_service.record_transaction(db_transaction, user_id="58f11472-4315-460f-9bac-06360a893e56")
+        portfolio_service.record_transaction(db_transaction, user_id=asset.user_id)
+        portfolio_service.update_portfolio_percentages(user_id=asset.user_id)
     except Exception as e:
             print(f"Error Type: {type(e).__name__}")
             print(f"Error Message: {str(e)}")
             print(f"\nFull Traceback:")
             traceback.print_exc()
-            raise HTTPException(status_code=500, detail="Failed to update asset related to this transaction") from e  
-
-    try:
-        portfolio_service.update_portfolio_percentages(user_id="58f11472-4315-460f-9bac-06360a893e56")
-    except Exception as e:
-            print(f"Error Type: {type(e).__name__}")
-            print(f"Error Message: {str(e)}")
-            print(f"\nFull Traceback:")
-            traceback.print_exc()
-            raise HTTPException(status_code=500, detail="Failed to update portfolio percentages after transaction") from e      
+            raise HTTPException(status_code=500, detail="Failed to update asset related to this transaction") from e       
 
     try:
         session.add(db_transaction)
@@ -125,6 +122,7 @@ def get_all_transactions(session: DatabaseSession):
     """
     transactions = session.query(Transaction).all()
     if not transactions:
+        print("No transactions found in the database.")
         raise HTTPException(status_code=404, detail="No transactions found")
 
     return transactions

@@ -55,8 +55,8 @@ class PortfolioResponse(BaseModel):
 class UserBase(BaseModel):
     """Base schema for user"""
     email: str = Field(..., min_length=3, max_length=100, description="User email")
-    notion_database_id: str = Field(..., min_length=1, max_length=50, description="Notion database ID")
-    notion_api_key: str = Field(..., min_length=1, max_length=100, description="Notion API key")
+    notion_database_id: Optional[str] = Field(None, min_length=1, max_length=50, description="Notion database ID")
+    notion_api_key: Optional[str] = Field(None, min_length=1, max_length=100, description="Notion API key")
 
 
 class UserCreate(UserBase):

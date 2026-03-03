@@ -15,10 +15,22 @@ from app.schema import (
 )
 from app.routers import assets, auth, transactions, refresh, portfolio
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
 # Create all tables (in production, you'd use Alembic migrations instead)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # tighten this to your domain in production
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Define a dependency type alias for cleaner code
 DatabaseSession = Annotated[Session, Depends(get_db)]

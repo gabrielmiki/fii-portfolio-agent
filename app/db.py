@@ -22,8 +22,8 @@ class User(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     email = Column(String(100), unique=True, nullable=False)
-    notion_database_id = Column(String(50), unique=True, nullable=False)
-    notion_api_key = Column(String(100), nullable=False)
+    notion_database_id = Column(String(50), unique=True, nullable=True)
+    notion_api_key = Column(String(100), nullable=True)
 
     assets = relationship("Asset", back_populates="user", cascade="all, delete-orphan")
 

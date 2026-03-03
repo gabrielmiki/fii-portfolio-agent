@@ -53,6 +53,7 @@ def create_user(
     except IntegrityError as e:
         session.rollback()
         error_msg = str(e.orig).lower()
+        print(f"IntegrityError: {error_msg}")  # Debug log
         
         if 'email' in error_msg or 'unique' in error_msg:
             raise HTTPException(

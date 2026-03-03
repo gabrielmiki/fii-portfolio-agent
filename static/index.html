@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FII Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg0:    #060E18;
+      --bg1:    #08111C;
+      --bg2:    #0A1520;
+      --bg3:    #0C1E34;
+      --border: #1E3350;
+      --navy:   #0A3870;
+      --blue:   #1760C0;
+      --text:   #E8F0FE;
+      --muted:  #8090A8;
+      --dim:    #4A6080;
+      --green:  #00C896;
+      --red:    #FF4D4D;
+      --amber:  #F0B020;
+      --mono:   'IBM Plex Mono', monospace;
+      --sans:   'Syne', sans-serif;
+    }
+
+    body { background: var(--bg0); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @keyframes fadeIn  { from { opacity:0; transform:translateY(6px); }  to { opacity:1; transform:translateY(0); } }
+    @keyframes slideUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin    { to { transform: rotate(360deg); } }
+    @keyframes pulse   { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+    /* ── Page switcher ── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ════════════════════════════════════════
+       AUTH PAGES  (login + signup)
+    ════════════════════════════════════════ */
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg0);
+      /* subtle grid lines */
+      background-image:
+        linear-gradient(rgba(30,51,80,.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30,51,80,.35) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .auth-card {
+      width: 440px;
+      background: #0A1520;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 44px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.6);
+      animation: slideUp .35s ease;
+    }
+
+    .auth-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 32px;
+    }
+    .auth-logo-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, #0E4A94, #00C896);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px; color: #fff;
+    }
+    .auth-logo-text { font-size: 18px; font-weight: 800; letter-spacing: .04em; }
+    .auth-logo-sub  { font-size: 10px; font-weight: 600; color: var(--dim); letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
+
+    .auth-title    { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    .auth-subtitle { font-size: 13px; color: var(--dim); margin-bottom: 32px; font-family: var(--mono); }
+
+    .auth-divider {
+      border: none; border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+
+    .auth-footer {
+      text-align: center; font-size: 13px; color: var(--dim);
+    }
+    .auth-link {
+      color: #A8CCFF; cursor: pointer; font-weight: 600;
+      text-decoration: none; border-bottom: 1px solid transparent;
+      transition: border-color .15s;
+    }
+    .auth-link:hover { border-color: #A8CCFF; }
+
+    /* notion section inside signup */
+    .notion-section {
+      background: var(--bg0); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 20px; margin-bottom: 16px;
+    }
+    .notion-section-title {
+      font-size: 11px; font-weight: 700; color: var(--amber);
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .notion-section-note {
+      font-family: var(--mono); font-size: 11px; color: var(--dim);
+      margin-top: 4px; line-height: 1.5;
+    }
+
+    /* ════════════════════════════════════════
+       DASHBOARD
+    ════════════════════════════════════════ */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg1); border-bottom: 1px solid var(--border);
+      height: 60px; padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display:flex; align-items:center; gap:12px; }
+    .logo-icon {
+      width:32px; height:32px; border-radius:8px;
+      background: linear-gradient(135deg, #0E4A94, #00C896);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:14px; color:#fff;
+    }
+    .logo-title { font-size:14px; font-weight:800; letter-spacing:.04em; }
+    .logo-sub   { font-size:9px; font-weight:600; color:var(--dim); letter-spacing:.12em; text-transform:uppercase; margin-top:1px; }
+
+    nav { display:flex; gap:4px; }
+    .tab {
+      background:transparent; border:1px solid transparent;
+      color:var(--dim); padding:6px 18px; border-radius:6px;
+      cursor:pointer; font-family:var(--sans); font-weight:600; font-size:13px; transition:all .15s;
+    }
+    .tab.active  { background:var(--navy); border-color:var(--blue); color:#A8CCFF; }
+    .tab:hover:not(.active) { color:var(--muted); }
+
+    .header-right { display:flex; align-items:center; gap:12px; }
+    .user-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px 4px 6px;
+      font-size: 12px; color: var(--muted);
+    }
+    .user-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: linear-gradient(135deg, #0E4A94, #00C896);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff;
+    }
+
+    button { cursor:pointer; font-family:var(--sans); font-weight:600; transition:background .15s; }
+    .btn    { border-radius:6px; font-size:13px; padding:10px 20px; }
+    .btn-sm { border-radius:6px; font-size:12px; padding:6px 14px; }
+    .btn-primary { background:#0A3870; border:1px solid var(--blue); color:#A8CCFF; }
+    .btn-primary:hover { background:#0E4A94; }
+    .btn-success { background:#023C2A; border:1px solid var(--green); color:var(--green); }
+    .btn-success:hover { background:#034D36; }
+    .btn-danger  { background:#3A0A0A; border:1px solid var(--red); color:var(--red); }
+    .btn-danger:hover  { background:#4D1010; }
+    .btn-ghost   { background:transparent; border:1px solid var(--border); color:var(--dim); }
+    .btn-ghost:hover { background:var(--bg2); }
+    .btn-amber   { background:#2A1E00; border:1px solid var(--amber); color:var(--amber); }
+    .btn-amber:hover { background:#3A2A00; }
+    .btn-full    { width:100%; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+
+    main { max-width:1200px; margin:0 auto; padding:28px; animation:fadeIn .4s ease; }
+
+    .stats { display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap; }
+    .stat-card {
+      background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+      padding:18px 22px; flex:1; min-width:150px;
+    }
+    .stat-label { font-size:11px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; }
+    .stat-value { font-family:var(--mono); font-size:22px; font-weight:500; color:var(--text); letter-spacing:-.02em; }
+    .stat-sub   { font-family:var(--mono); font-size:11px; color:var(--dim); margin-top:4px; }
+
+    .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .section-title  { font-size:16px; font-weight:700; color:#C8D8F0; letter-spacing:.02em; }
+
+    .table-wrap { background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; }
+    thead tr { border-bottom:1px solid var(--border); }
+    th {
+      padding:12px 16px; text-align:left;
+      font-size:10px; font-weight:700; color:var(--dim);
+      text-transform:uppercase; letter-spacing:.1em;
+      background:var(--bg0); white-space:nowrap;
+    }
+    tbody tr { border-bottom:1px solid #0E2038; transition:background .12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:nth-child(even) { background:var(--bg0); }
+    tbody tr:hover { background:var(--bg3); }
+    td { padding:14px 16px; font-size:13px; }
+
+    .badge-ticker  { font-family:var(--mono); font-size:13px; font-weight:500; color:#A8CCFF; background:#0A2040; padding:3px 8px; border-radius:4px; border:1px solid var(--blue); }
+    .badge-sector  { font-size:11px; font-weight:600; color:var(--dim); background:#0A1830; padding:2px 8px; border-radius:4px; border:1px solid var(--border); }
+    .badge-buy     { background:#00322433; color:var(--green); padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+    .badge-sell    { background:#32000433; color:var(--red);   padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+    .badge-pnl-pos { font-family:var(--mono); font-size:12px; font-weight:500; color:var(--green); background:#00322422; padding:3px 8px; border-radius:4px; }
+    .badge-pnl-neg { font-family:var(--mono); font-size:12px; font-weight:500; color:var(--red);   background:#32000422; padding:3px 8px; border-radius:4px; }
+
+    .mono  { font-family:var(--mono); }
+    .muted { color:var(--muted); }
+    .dimmed{ color:var(--dim); }
+    .bold  { font-weight:500; }
+    .td-actions { display:flex; gap:6px; }
+
+    .empty { padding:48px; text-align:center; color:var(--dim); font-family:var(--mono); font-size:13px; }
+
+    .allocation   { margin-top:20px; }
+    .alloc-title  { font-size:12px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:.1em; margin-bottom:12px; }
+    .alloc-chips  { display:flex; gap:8px; flex-wrap:wrap; }
+    .alloc-chip   { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 16px; display:flex; align-items:center; gap:10px; }
+    .alloc-dot    { width:8px; height:8px; border-radius:50%; }
+
+    /* Modal */
+    #overlay {
+      position:fixed; inset:0; background:rgba(0,0,8,.75);
+      z-index:1000; display:none; align-items:center; justify-content:center;
+      backdrop-filter:blur(4px);
+    }
+    #overlay.open { display:flex; }
+    .modal {
+      background:#0F1923; border:1px solid var(--border); border-radius:12px;
+      width:480px; max-height:85vh; overflow:auto;
+      padding:28px 32px; box-shadow:0 32px 80px rgba(0,0,0,.7);
+      animation:slideUp .25s ease;
+    }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .modal-title  { font-size:18px; font-weight:700; color:var(--text); }
+    .modal-close  { background:none; border:none; color:var(--dim); font-size:20px; line-height:1; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+
+    /* Form */
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:12px; font-weight:600; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+    .field input, .field select, .field textarea {
+      width:100%; background:var(--bg0); border:1px solid var(--border); border-radius:6px;
+      padding:10px 12px; color:#C8D8F0; font-family:var(--mono); font-size:13px;
+      outline:none; transition:border-color .15s; resize:none;
+    }
+    .field input:focus, .field select:focus { border-color:var(--blue); }
+    .field input.err { border-color:var(--red); }
+    .field-hint { font-family:var(--mono); font-size:11px; color:var(--dim); margin-top:4px; }
+    .field select option { background:#0F1923; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+
+    /* Toast */
+    #toast {
+      position:fixed; bottom:28px; right:28px; z-index:9999;
+      font-size:13px; font-weight:600; padding:12px 20px; border-radius:8px;
+      box-shadow:0 8px 32px rgba(0,0,0,.5); display:none; align-items:center; gap:10px;
+      animation:slideUp .3s ease; color:#fff; max-width:360px;
+    }
+    #toast.show { display:flex; }
+    .spin { display:inline-block; animation:spin .8s linear infinite; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     PAGE: LOGIN
+════════════════════════════════════════════════════════ -->
+<div id="page-login" class="page active">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">F</div>
+        <div>
+          <div class="auth-logo-text">FII TRACKER</div>
+          <div class="auth-logo-sub">Agentic Portfolio Backend</div>
+        </div>
+      </div>
+
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-subtitle">Sign in with your registered email</div>
+
+      <div class="field">
+        <label for="login-email">Email address</label>
+        <input id="login-email" type="email" placeholder="you@example.com"
+               onkeydown="if(event.key==='Enter') handleLogin()" />
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="handleLogin()" id="btn-login">
+        Sign In
+      </button>
+
+      <hr class="auth-divider" />
+
+      <div class="auth-footer">
+        Don't have an account?
+        <span class="auth-link" onclick="showPage('signup')">Create one →</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     PAGE: SIGN UP
+════════════════════════════════════════════════════════ -->
+<div id="page-signup" class="page">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">F</div>
+        <div>
+          <div class="auth-logo-text">FII TRACKER</div>
+          <div class="auth-logo-sub">Agentic Portfolio Backend</div>
+        </div>
+      </div>
+
+      <div class="auth-title">Create account</div>
+      <div class="auth-subtitle">Your portfolio awaits</div>
+
+      <div class="field">
+        <label for="signup-email">Email address</label>
+        <input id="signup-email" type="email" placeholder="you@example.com" />
+      </div>
+
+      <!-- Notion credentials block -->
+      <div class="notion-section">
+        <div class="notion-section-title">
+          ⬡ Notion Integration <span style="color:var(--dim);font-weight:400">(optional)</span>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label for="signup-notion-db">Notion Database ID</label>
+          <input id="signup-notion-db" type="text" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label for="signup-notion-key">Notion API Key</label>
+          <input id="signup-notion-key" type="password" placeholder="secret_…" />
+        </div>
+        <div class="notion-section-note">
+          You can add these later. Used by ⬡ Sync Notion in the dashboard.
+        </div>
+      </div>
+
+      <button class="btn btn-success btn-full" onclick="handleSignup()" id="btn-signup">
+        Create Account
+      </button>
+
+      <hr class="auth-divider" />
+
+      <div class="auth-footer">
+        Already have an account?
+        <span class="auth-link" onclick="showPage('login')">Sign in →</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     PAGE: DASHBOARD
+════════════════════════════════════════════════════════ -->
+<div id="page-dashboard" class="page">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">F</div>
+      <div>
+        <div class="logo-title">FII TRACKER</div>
+        <div class="logo-sub">Agentic Portfolio Backend</div>
+      </div>
+    </div>
+
+    <nav>
+      <button class="tab active" onclick="switchTab('portfolio')">Portfolio</button>
+      <button class="tab"        onclick="switchTab('transactions')">Transactions</button>
+    </nav>
+
+    <div class="header-right">
+      <button id="btn-refresh" class="btn-sm btn-ghost"  onclick="handleRefresh()">↻ Refresh Prices</button>
+      <button id="btn-sync"    class="btn-sm btn-amber"  onclick="handleSync()">⬡ Sync Notion</button>
+      <div class="user-pill">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span id="user-email-display">—</span>
+      </div>
+      <button class="btn-sm btn-ghost" onclick="handleLogout()" title="Sign out">⏻</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Portfolio Value</div>
+        <div class="stat-value" id="stat-value">R$ —</div>
+        <div class="stat-sub"  id="stat-count">— funds</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Cost Basis</div>
+        <div class="stat-value" id="stat-cost">R$ —</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Unrealized P&L</div>
+        <div class="stat-value" id="stat-pnl">—</div>
+        <div class="stat-sub"   id="stat-pct">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Refreshed</div>
+        <div class="stat-value" id="stat-time">—</div>
+        <div class="stat-sub">Today</div>
+      </div>
+    </div>
+
+    <!-- Portfolio tab -->
+    <div id="tab-portfolio">
+      <div class="section-header">
+        <span class="section-title">Portfolio Assets</span>
+        <button class="btn-sm btn-success" onclick="openAddAsset()">＋ Add FII</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th><th>Fund Name</th><th>Sector</th>
+              <th>Qty</th><th>Avg Price</th><th>Curr Price</th>
+              <th>Value</th><th>P&L</th><th>Trend</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="asset-body"></tbody>
+        </table>
+      </div>
+      <div id="allocation" class="allocation" style="display:none">
+        <div class="alloc-title">Sector Allocation</div>
+        <div class="alloc-chips" id="alloc-chips"></div>
+      </div>
+    </div>
+
+    <!-- Transactions tab -->
+    <div id="tab-transactions" style="display:none">
+      <div class="section-header">
+        <span class="section-title">Transaction History</span>
+        <button class="btn-sm btn-primary" onclick="openAddTx()">＋ New Transaction</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th><th>Asset</th><th>Qty</th>
+              <th>Price/Unit</th><th>Total</th><th>Date</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div id="overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Modal</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════════════════ -->
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+const BASE = "http://localhost:8000";
+
+const SECTORS = [
+  "Logística","Híbrido","CRI","Shoppings",
+  "Lajes Corporativas","Hospitais","Residencial","Agro"
+];
+const SECTOR_COLORS = {
+  "Logística":"#0E4A94","Híbrido":"#006B50","CRI":"#6B3000",
+  "Shoppings":"#4A006B","Lajes Corporativas":"#006B6B",
+  "Hospitais":"#6B4A00","Residencial":"#006B28","Agro":"#6B0000"
+};
+
+// ─── Session (persisted in localStorage) ─────────────────────────────────────
+let currentUser = null;   // { id, email, notion_database_id, notion_api_key }
+
+function saveSession(user) {
+  currentUser = user;
+  localStorage.setItem("fii_user", JSON.stringify(user));
+}
+function clearSession() {
+  currentUser = null;
+  localStorage.removeItem("fii_user");
+}
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem("fii_user")); } catch { return null; }
+}
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+  const r = await fetch(BASE + url, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  if (!r.ok) {
+    let detail = `HTTP ${r.status}`;
+    try { detail = (await r.json()).detail ?? detail; } catch {}
+    throw new Error(detail);
+  }
+  return r.status === 204 ? null : r.json();
+}
+
+const api = {
+  // Users
+  createUser:  (data) => apiFetch("/users/users/",       { method:"POST", body:JSON.stringify(data) }),
+  getUsers:    ()     => apiFetch("/users/users/"),
+  getUser:     (id)   => apiFetch(`/users/users/${id}`),
+
+  // Assets
+  getPortfolio:()     => apiFetch("/assets/portfolio/").then(d => d.assets ?? d),
+  createAsset: (data) => apiFetch("/assets/assets/",     { method:"POST", body:JSON.stringify(data) }),
+  updateAsset: (id,d) => apiFetch(`/assets/assets/${id}`,{ method:"PUT",  body:JSON.stringify(d) }),
+  deleteAsset: (id)   => apiFetch(`/assets/assets/${id}`,{ method:"DELETE" }),
+
+  // Market & sync
+  refreshMarket:()    => apiFetch("/refresh",    { method:"POST" }),
+  syncNotion:   ()    => apiFetch("/sync/notion",{ method:"POST" }),
+
+  // Transactions
+  getTransactions:  ()     => apiFetch("/transactions/"),
+  createTransaction:(data) => apiFetch("/transactions/", { method:"POST", body:JSON.stringify(data) }),
+  deleteTransaction:(id)   => apiFetch(`/transactions/${id}`, { method:"DELETE" }),
+};
+
+// ─── Page routing ─────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+}
+
+// ─── AUTH: Login ──────────────────────────────────────────────────────────────
+async function handleLogin() {
+  const email = document.getElementById("login-email").value.trim();
+  if (!email) { showToast("Please enter your email.", "error"); return; }
+
+  const btn = document.getElementById("btn-login");
+  btn.disabled = true; btn.textContent = "Signing in…";
+
+  try {
+    // Fetch all users and match by email (no password in your API)
+    const users = await api.getUsers();
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!user) {
+      showToast("No account found with that email.", "error");
+      document.getElementById("login-email").classList.add("err");
+      return;
+    }
+
+    saveSession(user);
+    enterDashboard();
+  } catch (e) {
+    showToast("Login failed: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Sign In";
+  }
+}
+
+// ─── AUTH: Sign up ────────────────────────────────────────────────────────────
+async function handleSignup() {
+  const email      = document.getElementById("signup-email").value.trim();
+  const notionDb   = document.getElementById("signup-notion-db").value.trim();
+  const notionKey  = document.getElementById("signup-notion-key").value.trim();
+
+  if (!email) { showToast("Email is required.", "error"); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast("Please enter a valid email address.", "error"); return;
+  }
+
+  const btn = document.getElementById("btn-signup");
+  btn.disabled = true; btn.textContent = "Creating account…";
+
+  try {
+    const payload = {
+      email,
+      notion_database_id: notionDb || null,
+      notion_api_key:     notionKey || null,
+    };
+    const user = await api.createUser(payload);
+    saveSession(user);
+    showToast(`Welcome, ${user.email.split("@")[0]}!`);
+    enterDashboard();
+  } catch (e) {
+    showToast("Sign up failed: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "Create Account";
+  }
+}
+
+// ─── AUTH: Logout ─────────────────────────────────────────────────────────────
+function handleLogout() {
+  clearSession();
+  assets = []; transactions = [];
+  showPage("login");
+  showToast("Signed out.", "info");
+}
+
+// ─── Dashboard entry ──────────────────────────────────────────────────────────
+function enterDashboard() {
+  // Update user pill in header
+  const initials = (currentUser.email[0] ?? "?").toUpperCase();
+  document.getElementById("user-avatar").textContent = initials;
+  document.getElementById("user-email-display").textContent = currentUser.email.split("@")[0];
+
+  showPage("dashboard");
+  loadData();
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let assets = [], transactions = [];
+
+// ─── Format helpers ───────────────────────────────────────────────────────────
+const fmtBRL = (n) => n != null
+  ? n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" }) : "—";
+const fmtNum = (n) => n != null
+  ? n.toLocaleString("pt-BR", { minimumFractionDigits:2 }) : "—";
+const fmtPct = (n) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
+const pnlPct = (a) => a.current_price
+  ? ((a.current_price - a.average_buy_price) / a.average_buy_price) * 100
+  : null;
+
+function sparkSVG(pct) {
+  const pos = (pct ?? 0) >= 0;
+  const pts = Array.from({length:8}, (_,i) => {
+    const x = i * 14;
+    const y = 20 - Math.sin(i*2.3+(pct||0))*4 - (pos ? i*.4 : -i*.4);
+    return `${x},${y.toFixed(1)}`;
+  }).join(" ");
+  return `<svg width="98" height="28" viewBox="0 0 98 28" style="display:block">
+    <polyline points="${pts}" fill="none"
+      stroke="${pos ? "var(--green)" : "var(--red)"}"
+      stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// ─── Load data ────────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    [assets, transactions] = await Promise.all([
+      api.getPortfolio(),
+      api.getTransactions(),
+    ]);
+  } catch (e) {
+    showToast("Failed to load data: " + e.message, "error");
+    assets = []; transactions = [];
+  }
+  renderStats();
+  renderAssets();
+  renderTransactions();
+  document.getElementById("stat-time").textContent =
+    new Date().toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const totalValue = assets.reduce((s,a) => s + (a.current_price ?? a.average_buy_price)*a.quantity, 0);
+  const totalCost  = assets.reduce((s,a) => s + a.average_buy_price*a.quantity, 0);
+  const pnl = totalValue - totalCost;
+  const pct = totalCost > 0 ? (pnl/totalCost)*100 : 0;
+
+  document.getElementById("stat-value").textContent = fmtBRL(totalValue);
+  document.getElementById("stat-count").textContent = `${assets.length} fund${assets.length!==1?"s":""}`;
+  document.getElementById("stat-cost").textContent  = fmtBRL(totalCost);
+
+  const el = document.getElementById("stat-pnl");
+  el.textContent = fmtBRL(pnl);
+  el.style.color = pnl >= 0 ? "var(--green)" : "var(--red)";
+  document.getElementById("stat-pct").textContent = fmtPct(pct);
+}
+
+// ─── Assets table ─────────────────────────────────────────────────────────────
+function renderAssets() {
+  const tbody = document.getElementById("asset-body");
+  if (!assets.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty">No assets yet. Add your first FII to get started.</div></td></tr>`;
+    document.getElementById("allocation").style.display = "none";
+    return;
+  }
+  tbody.innerHTML = assets.map(a => {
+    const p   = pnlPct(a);
+    const val = (a.current_price ?? a.average_buy_price) * a.quantity;
+    const pnlBadge = p != null
+      ? `<span class="${p>=0?"badge-pnl-pos":"badge-pnl-neg"}">${fmtPct(p)}</span>`
+      : `<span class="dimmed">—</span>`;
+    return `<tr>
+      <td><span class="badge-ticker">${a.symbol}</span></td>
+      <td style="color:#C8D8F0;max-width:180px">${a.name}</td>
+      <td><span class="badge-sector">${a.sector}</span></td>
+      <td class="mono muted" style="text-align:center">${a.quantity}</td>
+      <td class="mono dimmed">${fmtNum(a.average_buy_price)}</td>
+      <td class="mono ${a.current_price?"bold":"dimmed"}">${a.current_price?fmtNum(a.current_price):"—"}</td>
+      <td class="mono bold" style="color:#C8D8F0">${fmtBRL(val)}</td>
+      <td>${pnlBadge}</td>
+      <td>${sparkSVG(p)}</td>
+      <td><div class="td-actions">
+        <button class="btn-sm btn-ghost"   onclick="openEditAsset('${a.id}')">✎</button>
+        <button class="btn-sm btn-danger"  onclick="handleDeleteAsset('${a.id}','${a.symbol}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join("");
+  renderAllocation();
+}
+
+function renderAllocation() {
+  const total = assets.reduce((s,a) => s+(a.current_price??a.average_buy_price)*a.quantity,0);
+  const byS   = assets.reduce((acc,a) => {
+    const v = (a.current_price??a.average_buy_price)*a.quantity;
+    acc[a.sector] = (acc[a.sector]||0)+v; return acc;
+  },{});
+  document.getElementById("alloc-chips").innerHTML =
+    Object.entries(byS).sort((a,b)=>b[1]-a[1]).map(([s,v]) => {
+      const pct = total>0?(v/total)*100:0;
+      const col = SECTOR_COLORS[s]||"#0E4A94";
+      return `<div class="alloc-chip" style="border-color:${col}44">
+        <div class="alloc-dot" style="background:${col}"></div>
+        <span style="font-size:12px;color:var(--muted)">${s}</span>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--text);font-weight:500">${pct.toFixed(1)}%</span>
+      </div>`;
+    }).join("");
+  document.getElementById("allocation").style.display = "block";
+}
+
+// ─── Transactions table ───────────────────────────────────────────────────────
+function renderTransactions() {
+  const tbody = document.getElementById("tx-body");
+  if (!transactions.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No transactions recorded yet.</div></td></tr>`;
+    return;
+  }
+  const sorted = [...transactions].sort((a,b)=>new Date(b.transaction_date)-new Date(a.transaction_date));
+  tbody.innerHTML = sorted.map(tx => {
+    const asset = assets.find(a=>a.id===tx.asset_id);
+    const total = tx.quantity * tx.price_per_unit;
+    const isBuy = tx.transaction_type==="buy";
+    const dateStr = new Date(tx.transaction_date).toLocaleString("pt-BR",{
+      day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"
+    });
+    return `<tr>
+      <td><span class="${isBuy?"badge-buy":"badge-sell"}">${tx.transaction_type}</span></td>
+      <td>${asset
+        ?`<div class="mono" style="color:#A8CCFF;font-size:12px">${asset.symbol}</div>
+          <div style="font-size:11px;color:var(--dim)">${asset.name}</div>`
+        :`<span class="mono dimmed" style="font-size:12px">Unknown</span>`}
+      </td>
+      <td class="mono muted">${tx.quantity}</td>
+      <td class="mono dimmed">${fmtBRL(tx.price_per_unit)}</td>
+      <td class="mono bold" style="color:#C8D8F0">${fmtBRL(total)}</td>
+      <td class="mono dimmed" style="font-size:11px">${dateStr}</td>
+      <td><button class="btn-sm btn-danger" onclick="handleDeleteTx('${tx.id}')">✕</button></td>
+    </tr>`;
+  }).join("");
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById("tab-portfolio").style.display    = tab==="portfolio"    ? "block":"none";
+  document.getElementById("tab-transactions").style.display = tab==="transactions" ? "block":"none";
+  document.querySelectorAll(".tab").forEach((el,i)=>{
+    el.classList.toggle("active",(i===0&&tab==="portfolio")||(i===1&&tab==="transactions"));
+  });
+}
+
+// ─── Dashboard actions ────────────────────────────────────────────────────────
+async function handleRefresh() {
+  const btn = document.getElementById("btn-refresh");
+  btn.disabled=true; btn.innerHTML='<span class="spin">↻</span> Refreshing…';
+  showToast("Refreshing market data…","info");
+  try {
+    await api.refreshMarket(); await loadData();
+    showToast("Market prices updated!");
+  } catch(e) { showToast("Refresh failed: "+e.message,"error"); }
+  finally { btn.disabled=false; btn.innerHTML="↻ Refresh Prices"; }
+}
+
+async function handleSync() {
+  const btn = document.getElementById("btn-sync");
+  btn.disabled=true; btn.innerHTML='<span class="spin">⟳</span> Syncing…';
+  showToast("Syncing to Notion…","info");
+  try {
+    await api.syncNotion(); showToast("Notion sync complete!");
+  } catch(e) { showToast("Sync failed: "+e.message,"error"); }
+  finally { btn.disabled=false; btn.innerHTML="⬡ Sync Notion"; }
+}
+
+async function handleDeleteAsset(id, symbol) {
+  if(!confirm(`Remove ${symbol} and all its transactions?`)) return;
+  try {
+    await api.deleteAsset(id); await loadData();
+    showToast(`${symbol} removed.`,"error");
+  } catch(e) { showToast("Delete failed: "+e.message,"error"); }
+}
+
+async function handleDeleteTx(id) {
+  try {
+    await api.deleteTransaction(id); await loadData();
+    showToast("Transaction deleted.","error");
+  } catch(e) { showToast("Delete failed: "+e.message,"error"); }
+}
+
+// ─── Modal helpers ────────────────────────────────────────────────────────────
+function openModal(title, html) {
+  document.getElementById("modal-title").textContent = title;
+  document.getElementById("modal-body").innerHTML = html;
+  document.getElementById("overlay").classList.add("open");
+}
+function closeModal(e) {
+  if(e && e.target!==document.getElementById("overlay")) return;
+  document.getElementById("overlay").classList.remove("open");
+}
+document.addEventListener("keydown", e => {
+  if(e.key==="Escape") document.getElementById("overlay").classList.remove("open");
+});
+
+function fieldHTML(label,id,type="text",value="",extra="") {
+  return `<div class="field">
+    <label for="${id}">${label}</label>
+    <input id="${id}" type="${type}" value="${value}" ${extra}/>
+  </div>`;
+}
+function selectHTML(label,id,options,value="") {
+  return `<div class="field"><label for="${id}">${label}</label>
+    <select id="${id}">${options.map(o=>`<option value="${o}"${o===value?" selected":""}>${o}</option>`).join("")}</select>
+  </div>`;
+}
+const val = id => document.getElementById(id)?.value ?? "";
+
+// ─── Add / Edit Asset ─────────────────────────────────────────────────────────
+function openAddAsset() { openModal("Add FII Asset", assetFormHTML()); }
+function openEditAsset(id) {
+  const a = assets.find(x=>x.id===id); if(!a) return;
+  openModal(`Edit ${a.symbol}`, assetFormHTML(a));
+}
+function assetFormHTML(a={}) {
+  return `
+    <div class="grid-2">
+      ${fieldHTML("Ticker Symbol","f-symbol","text",a.symbol??"")}
+      ${selectHTML("Sector","f-sector",SECTORS,a.sector??SECTORS[0])}
+    </div>
+    ${fieldHTML("Fund Name","f-name","text",a.name??"")}
+    <div class="grid-2">
+      ${fieldHTML("Avg Buy Price (R$)","f-price","number",a.average_buy_price??"","min='0' step='0.01'")}
+      ${fieldHTML("Quantity","f-qty","number",a.quantity??"","min='1' step='1'")}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('overlay').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAsset('${a.id??""}')">${a.id?"Update Asset":"Add Asset"}</button>
+    </div>`;
+}
+async function submitAsset(existingId) {
+  const data = {
+    symbol:            val("f-symbol").trim().toUpperCase(),
+    name:              val("f-name").trim(),
+    sector:            val("f-sector"),
+    average_buy_price: parseFloat(val("f-price")),
+    quantity:          parseFloat(val("f-qty")),
+    user_id:           currentUser?.id ?? "u1",
+  };
+  if(!data.symbol||!data.name||isNaN(data.average_buy_price)||isNaN(data.quantity)) {
+    showToast("Please fill all required fields.","error"); return;
+  }
+  const btn = document.querySelector(".modal-footer .btn-primary");
+  btn.disabled=true; btn.textContent="Saving…";
+  try {
+    if(existingId) { await api.updateAsset(existingId,data); showToast("Asset updated!"); }
+    else           { await api.createAsset(data); showToast(`${data.symbol} added!`); }
+    document.getElementById("overlay").classList.remove("open");
+    await loadData();
+  } catch(e) {
+    showToast("Save failed: "+e.message,"error");
+    btn.disabled=false; btn.textContent=existingId?"Update Asset":"Add Asset";
+  }
+}
+
+// ─── Add Transaction ──────────────────────────────────────────────────────────
+function openAddTx() {
+  if(!assets.length) { showToast("Add an asset first.","error"); return; }
+  const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  const assetOpts = assets.map(a=>`<option value="${a.id}">${a.symbol} — ${a.name}</option>`).join("");
+  openModal("New Transaction",`
+    <div class="grid-2">
+      ${selectHTML("Type","f-type",["buy","sell"])}
+      <div class="field"><label>Asset</label><select id="f-asset">${assetOpts}</select></div>
+    </div>
+    <div class="grid-2">
+      ${fieldHTML("Quantity","f-qty","number","","min='1' step='1'")}
+      ${fieldHTML("Price/Unit (R$)","f-price","number","","min='0' step='0.01'")}
+    </div>
+    ${fieldHTML("Date & Time","f-date","datetime-local",now.toISOString().slice(0,16))}
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('overlay').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitTx()">Register Transaction</button>
+    </div>`);
+}
+async function submitTx() {
+  const data = {
+    transaction_type: val("f-type"),
+    asset_id:         val("f-asset"),
+    quantity:         parseFloat(val("f-qty")),
+    price_per_unit:   parseFloat(val("f-price")),
+    transaction_date: new Date(val("f-date")).toISOString(),
+  };
+  if(isNaN(data.quantity)||isNaN(data.price_per_unit)) {
+    showToast("Please fill all required fields.","error"); return;
+  }
+  const btn = document.querySelector(".modal-footer .btn-primary");
+  btn.disabled=true; btn.textContent="Saving…";
+  try {
+    await api.createTransaction(data);
+    showToast("Transaction recorded!");
+    document.getElementById("overlay").classList.remove("open");
+    await loadData();
+  } catch(e) {
+    showToast("Save failed: "+e.message,"error");
+    btn.disabled=false; btn.textContent="Register Transaction";
+  }
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type="success") {
+  const el = document.getElementById("toast");
+  el.style.background = type==="error"?"#FF4D4D":type==="info"?"#1B3A5C":"#00C896";
+  el.innerHTML = `${type==="error"?"✕":type==="info"?"↺":"✓"} ${msg}`;
+  el.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove("show"), 2800);
+}
+
+// ─── Boot: restore session if present ────────────────────────────────────────
+(function init() {
+  const saved = loadSession();
+  if(saved) {
+    currentUser = saved;
+    enterDashboard();
+  } else {
+    showPage("login");
+  }
+})();
+</script>
+</body>
+</html>

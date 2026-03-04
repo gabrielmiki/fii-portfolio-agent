@@ -532,9 +532,9 @@ const api = {
   syncNotion:   ()    => apiFetch("/sync/notion",{ method:"POST" }),
 
   // Transactions
-  getTransactions:  ()     => apiFetch("/transactions/"),
-  createTransaction:(data) => apiFetch("/transactions/", { method:"POST", body:JSON.stringify(data) }),
-  deleteTransaction:(id)   => apiFetch(`/transactions/${id}`, { method:"DELETE" }),
+  getTransactions:  ()     => apiFetch("/transactions/transactions/"),
+  createTransaction:(data) => apiFetch("/transactions/transactions/", { method:"POST", body:JSON.stringify(data) }),
+  deleteTransaction:(id)   => apiFetch(`/transactions/transactions/${id}`, { method:"DELETE" }),
 };
 
 // ─── Page routing ─────────────────────────────────────────────────────────────
@@ -651,19 +651,24 @@ function sparkSVG(pct) {
 // ─── Load data ────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    [assets, transactions] = await Promise.all([
-      api.getPortfolio(),
-      api.getTransactions(),
-    ]);
+    assets = await api.getPortfolio();
   } catch (e) {
-    showToast("Failed to load data: " + e.message, "error");
-    assets = []; transactions = [];
+    showToast("Failed to load assets: " + e.message, "error");
+    assets = [];
   }
+
+  try {
+    transactions = await api.getTransactions();
+  } catch (e) {
+    // 404 = no transactions yet, that's fine
+    transactions = [];
+  }
+
   renderStats();
   renderAssets();
   renderTransactions();
   document.getElementById("stat-time").textContent =
-    new Date().toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
+    new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────

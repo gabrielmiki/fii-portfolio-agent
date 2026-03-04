@@ -10,13 +10,13 @@ A containerized backend for tracking and managing Brazilian Real Estate Investme
 
 | Login | Sign Up |
 |-------|---------|
-| ![Login](docs/login.png) | ![Sign Up](docs/signup.png) |
+| ![Login](docs/login.jpeg) | ![Sign Up](docs/signup.jpeg) |
 
 ### Portfolio Dashboard
 
 | Portfolio | Updated Portfolio | Portfolio Updated Refreshed |
 |-------|---------|---------|
-| ![Portfolio](docs/portfolio.png) | ![Updated Portfolio](docs/updated_portfolio.png) | ![Portfolio Updated Refreshed](docs/portfolio_updated_refreshed.png) |
+| ![Portfolio](docs/portfolio.jpeg) | ![Updated Portfolio](docs/updated_portfolio.jpeg) | ![Portfolio Updated Refreshed](docs/portfolio_updated_refreshed.jpeg) |
 
 Live P&L, sector allocation breakdown, and per-asset trend sparklines.
 
@@ -24,7 +24,7 @@ Live P&L, sector allocation breakdown, and per-asset trend sparklines.
 
 | Transactions | Transactions Updated |
 |-------|-------|
-| ![Transactions](docs/transactions.png) | ![Transactions Updated](docs/transaction_updated.png) |
+| ![Transactions](docs/transactions.jpeg) | ![Transactions Updated](docs/transaction_updated.jpeg) |
 
 Full buy/sell history with timestamped records per asset.
 
@@ -32,7 +32,7 @@ Full buy/sell history with timestamped records per asset.
 
 | Add FII Asset | New Transaction |
 |---------------|-----------------|
-| ![Add Asset](docs/add_fii_popup.png) | ![New Transaction](docs/transaction_popup.png) |
+| ![Add Asset](docs/add_fii_popup.jpeg) | ![New Transaction](docs/transaction_popup.jpeg) |
 
 ---
 
@@ -227,3 +227,4 @@ Once configured, click **⬡ Sync Notion** in the dashboard header to push the f
 **Gabriel de Almeida Miki**  
 Production Engineering (USP São Carlos) · M.Sc. Computer Engineering (Politecnico di Milano)  
 [LinkedIn](https://linkedin.com/in/gabriel-miki) · [GitHub](https://github.com/gabriel-miki)
+
